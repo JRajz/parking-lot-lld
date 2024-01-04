@@ -2,15 +2,15 @@
 
 Low-level architecture for a backend system of a smart parking lot, handles vehicle entry and exit management, parking space allocation, and fee calculation.
 
-### Design Aspects
+## Design Aspects
 
 **1. Data Model**
 
 * **Purpose:** Efficiently store, retrieve, and manage parking data.
 
-## Classes and Relationships
+### Classes and Relationships
 
-**Key Classes:**
+***Key Classes:**
 
 * **ParkingSpot:**
   * Represents a single parking space.
@@ -37,32 +37,48 @@ Low-level architecture for a backend system of a smart parking lot, handles vehi
 * Many-to-one between ParkingTransaction and ParkingSpot (multiple transactions can use a spot over time).
 * One-to-one between ParkingSpot and Vehicle (if occupied) (a spot can be occupied by only one vehicle at a time).
 
-**Key Concepts:**
-
-* **Optimistic locking:** Used to prevent data conflicts during concurrent updates.
-* **Class extensions:** Ability to add more attributes and methods to classes based on specific requirements.
-
-## Diagrams
+### Diagrams
 
 ![Table Diagram](tables.png)
+
 ![UML Diagram](uml-diagram.png)
 
 **2. Algorithm for Spot Allocation**
 
 * **Purpose:** Optimize spot assignment for efficient space utilization and user convenience.
-* **Common Approaches:**
-    - Nearest Fit: Assigns closest available spot to vehicle's entry point.
-    - Size-Based Priority: Prioritizes matching vehicle size to spot size.
-    - User Preferences (optional): Incorporates user-specified floor or spot type preferences.
+
+**Steps:**
+
+* **Retrieve available spots:** Query the ParkingSpot table for spots with Availability = True and Size matching the vehicle's Type.
+
+* **Prioritize based on preferences:**  If available, prioritize spots matching the user's ParkingFloorPreference.
+
+* **Apply additional criteria (optional):** Consider factors like proximity to exits, distance from other parked vehicles, or real-time occupancy patterns.
+
+* **Assign spot:** Select the most suitable spot and mark it as occupied.
+
 
 **3. Fee Calculation Logic**
 
 * **Purpose:** Determine accurate parking fees based on duration and vehicle type.
-* **Typical Formula:** BaseRate + HourlyRate * (Duration - BaseDuration) * VehicleTypeMultiplier
+
+**Formula**
+
+  ```
+    Fee = BaseFee + (Duration * RateMultiplier * VehicleTypeMultiplier)
+   ```
+* **BaseFee:** Fixed parking fee.
+* **Duration:** Parking duration in hours or minutes.
+* **RateMultiplier:** Hourly or minutely rate based on time of day, day of the week, or other factors.
+* **VehicleTypeMultiplier:** Fee multiplier based on vehicle type (e.g., larger vehicles might have higher fees).
+
 
 **4. Concurrency Handling**
 
 * **Purpose:** Prevent data inconsistencies and errors with multiple users.
-* **Common Techniques:**
-    - Optimistic Locking: Uses version numbers to detect and handle conflicts during updates.
-    - Queueing Mechanisms: Manage incoming vehicles when all spots are occupied.
+
+    **Techniques:**
+
+    * **Optimistic locking:** Use versioning to detect and handle conflicts when multiple processes try to update the same data simultaneously.
+    * **Transactions:** Ensure database operations are atomic and consistent, preventing partial updates in case of errors.
+    * **Queues:** Consider using queues to manage incoming requests and process them sequentially, avoiding race conditions.
